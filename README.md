@@ -1,1 +1,1 @@
-"# RS-XPCore" 
+# RS-XPCore
