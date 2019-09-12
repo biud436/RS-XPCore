@@ -23,9 +23,6 @@ HWND g_hWnd = NULL;
 // 메인 코어 객체
 RSCore* g_prsCore = NULL;
 
-//HHOOK hKeyHook;
-//LRESULT CALLBACK KeyboardHook(int nCode, WPARAM wParam, LPARAM lParam);
-
 // DLL 핸들
 HINSTANCE g_hDllHandle = NULL;
 
@@ -128,11 +125,11 @@ RSDLL HBITMAP ConvertRGSSBitmapToBitmap(unsigned int object)
 
 	BITMAPINFO* bmi = (BITMAPINFO*)&bmih;
 
-	printf("width : %d, height : %d \n", width, height);
+	printf_s("width : %d, height : %d \n", width, height);
 
 	hBitmap = CreateDIBSection(mainDC, bmi, DIB_RGB_COLORS, &pvBits, NULL, 0x0);
 
-	printf("hBitmap : %d \n", hBitmap);
+	printf_s("hBitmap : %d \n", hBitmap);
 	
 	RGSSRGBA *row = bitmap->lastRow;
 
@@ -179,18 +176,10 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle,
 		g_hDllHandle = hDllHandle;
 		RSCreateDirectory("Graphics\\SplashScreen\\");
 		RSInitWithCoreSystem();
-		//DWORD dwThreadId;
-		//DWORD dwTID = 0;
-		//HWND localRGSSPlayer = FindWindow("RGSS Player", NULL);
-		//GetWindowThreadProcessId(localRGSSPlayer, &dwThreadId);
-		//dwTID = GetWindowThreadProcessId(localRGSSPlayer, NULL);
-		//hKeyHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardHook, NULL, dwTID);
 	}
 		break;
 
 	case DLL_PROCESS_DETACH:
-		// 윈도우 제거
-		//UnhookWindowsHookEx(hKeyHook);
 		RSRemoveCoreSystem();
 		break;
 	}
@@ -341,7 +330,7 @@ RSDLL void RSCreateDirectory(char* path)
 RSDLL void RSErrorHandling(HWND hWnd)
 {
 	DWORD errorCode = GetLastError();
-	char errorMsg[256];
+	char errorMsg[MAX_PATH];
 
 	if (errorCode == 0) {
 		return;
@@ -352,7 +341,7 @@ RSDLL void RSErrorHandling(HWND hWnd)
 		errorCode,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		errorMsg,
-		NULL,
+		MAX_PATH,
 		NULL);
 
 	MessageBox(hWnd, errorMsg, "경고", MB_OK | MB_ICONERROR);
@@ -459,21 +448,6 @@ unsigned WINAPI ThreadFunc(LPVOID arg)
 	return 0;
 }
 
-//LRESULT CALLBACK KeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
-//{
-//	if (nCode > 0) {
-//		if (wParam == VK_F12) {
-//			printf("F12 키 누름\n");
-//			g_prsCore->callDisposeFromRGSSPlayer();
-//		}
-//		if ((GetAsyncKeyState(VK_MENU) & 0x8000) && GetAsyncKeyState(VK_RETURN)) {
-//			printf("ALT키 + Enter 키 누름\n");
-//			return 1;
-//		}
-//	}
-//	return CallNextHookEx(hKeyHook, nCode, wParam, lParam);
-//}
-
 LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -516,6 +490,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_CREATE:
 		g_hWnd = hWnd;
+		break;
+	case WM_KILLFOCUS:
+		break;
+	case WM_SETFOCUS:
 		break;
 	case WM_PAINT:
 	{
@@ -758,22 +736,7 @@ void RSCore::Render(HDC hdc, HWND hWnd, PAINTSTRUCT& ps)
 	monitorinfo.cbSize = sizeof(monitorinfo);
 	GetMonitorInfo(hmonPrimary, &monitorinfo);
 
-	printf("현재 프레임 : %d \n", g_frame);
-
-	// //뷰포트 설정 (확대 & 축소의 설정)
-	//RECT rect;
-	//SetMapMode(MemDC, MM_ANISOTROPIC);
-	//GetClientRect(g_hWnd, &rect);
-	//SetWindowExtEx(MemDC, g_prsCore->windowSize.x, g_prsCore->windowSize.y, NULL);
-	//SetViewportExtEx(MemDC, rect.right, rect.bottom, NULL);
-
-	////확대&축소 트랜스폼 설정
-	//XFORM transform = { 1, 0, 0, 1, 0, 0 };
-	//transform.eM11 = (FLOAT)((FLOAT)g_prsCore->windowSize.x / (FLOAT)bx);
-	//transform.eM22 = (FLOAT)((FLOAT)g_prsCore->windowSize.y / (FLOAT)by);
-
-	//printf("em11 : %f\n", transform.eM11);
-	//printf("em22 : %f\n", transform.eM22);
+	printf_s("현재 프레임 : %d \n", g_frame);
 
 	// 주 작업 영역의 중앙에 시작 화면 놓기
 	const RECT & rcWork = monitorinfo.rcWork;
@@ -784,15 +747,15 @@ void RSCore::Render(HDC hdc, HWND hWnd, PAINTSTRUCT& ps)
 	int x_offset = (__rect.right - __rect.left) - (rcWork.right - rcWork.left);
 	int y_offset = (__rect.bottom - __rect.top) - (rcWork.bottom - rcWork.top);
 
-	printf("비트맵의 폭 : %d\n", bx);
-	printf("비트맵의 높이 : %d\n", by);
-	printf("작업 표시줄의 폭 : %d\n", x_offset);
-	printf("작업 표시줄의 높이 : %d\n", y_offset);
-	printf("g_prsCore->windowSize.y : %d\n", g_prsCore->windowSize.y);
-	printf("rcWork.bottom : %d \n", rcWork.bottom);
-	printf("rcWork.left : %d \n", rcWork.left);
-	printf("rcWork.top : %d \n", rcWork.top);
-	printf("rcWork.right : %d \n", rcWork.right);
+	printf_s("비트맵의 폭 : %d\n", bx);
+	printf_s("비트맵의 높이 : %d\n", by);
+	printf_s("작업 표시줄의 폭 : %d\n", x_offset);
+	printf_s("작업 표시줄의 높이 : %d\n", y_offset);
+	printf_s("g_prsCore->windowSize.y : %d\n", g_prsCore->windowSize.y);
+	printf_s("rcWork.bottom : %d \n", rcWork.bottom);
+	printf_s("rcWork.left : %d \n", rcWork.left);
+	printf_s("rcWork.top : %d \n", rcWork.top);
+	printf_s("rcWork.right : %d \n", rcWork.right);
 
 	int m_width = (FLOAT)((FLOAT)( windowSize.x ) / (FLOAT)bx ) * bx;
 	int m_height = (FLOAT)((FLOAT)( windowSize.y ) / (FLOAT)by ) * by;
@@ -800,7 +763,7 @@ void RSCore::Render(HDC hdc, HWND hWnd, PAINTSTRUCT& ps)
 	ptOrigin.x = rcWork.left + (windowSize.x / 2) - (m_width / 2);
 	ptOrigin.y = rcWork.top + (windowSize.y / 2) - (m_height / 2);
 
-	printf("그림의 좌표 : %d %d \n", ptOrigin.x, ptOrigin.y);
+	printf_s("그림의 좌표 : %d %d \n", ptOrigin.x, ptOrigin.y);
 
 	//SetGraphicsMode(MemDC, GM_ADVANCED);
 	//SetWorldTransform(MemDC, &transform);
