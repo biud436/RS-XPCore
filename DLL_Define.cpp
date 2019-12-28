@@ -54,9 +54,12 @@ LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL is_another_instance()
 {
 	HANDLE hMutex;
-	hMutex = CreateMutex(NULL, TRUE, "I_DONT_USE_RPGMAKERXP");
+
+	hMutex = CreateMutex(NULL, TRUE, XP_CORE_MUTEX);
+
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 		return TRUE;
+
 	return FALSE;
 }
 

@@ -71,4 +71,6 @@ const float MAX_FRAME_TIME = 1.0f / MIN_FRAME_RATE;
 	} \
 }
 
+#define XP_CORE_MUTEX "RMXPCore-Standard-Mutex"
+
 #endif
